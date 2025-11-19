@@ -4,7 +4,14 @@ import { ImageUploader } from './components/ImageUploader';
 import { PinterestCard } from './components/PinterestCard';
 import { analyzeImageForPinterest } from './services/geminiService';
 import { AnalysisResult } from './types';
-import { Palette, RefreshCw, LogOut } from 'lucide-react';
+import { Palette, RefreshCw, LogOut, Sparkles } from 'lucide-react';
+
+const STORAGE_KEY = 'pintvibe_api_key_data';
+
+interface StoredKeyData {
+  key: string;
+  expiry: number;
+}
 
 const App: React.FC = () => {
   const [apiKey, setApiKey] = useState<string | null>(null);
@@ -13,21 +20,46 @@ const App: React.FC = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load API key from local storage on mount
+  // Load API key from local storage on mount with expiration check
   useEffect(() => {
-    const storedKey = localStorage.getItem('gemini_api_key');
-    if (storedKey) {
-      setApiKey(storedKey);
+    const storedDataString = localStorage.getItem(STORAGE_KEY);
+    
+    if (storedDataString) {
+      try {
+        const storedData: StoredKeyData = JSON.parse(storedDataString);
+        const now = Date.now();
+
+        if (now < storedData.expiry) {
+          setApiKey(storedData.key);
+        } else {
+          // Key expired
+          localStorage.removeItem(STORAGE_KEY);
+          setApiKey(null);
+        }
+      } catch (e) {
+        // Error parsing, clear storage
+        localStorage.removeItem(STORAGE_KEY);
+        setApiKey(null);
+      }
+    } else {
+      // Fallback for older version key if exists (optional cleanup)
+      const oldKey = localStorage.getItem('gemini_api_key');
+      if (oldKey) {
+        localStorage.removeItem('gemini_api_key');
+      }
     }
   }, []);
 
   const handleSaveKey = (key: string) => {
-    localStorage.setItem('gemini_api_key', key);
+    const expiry = Date.now() + 24 * 60 * 60 * 1000; // 24 hours from now
+    const data: StoredKeyData = { key, expiry };
+    
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     setApiKey(key);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('gemini_api_key');
+    localStorage.removeItem(STORAGE_KEY);
     setApiKey(null);
     setAnalysis(null);
     setPreviewUrl(null);
@@ -66,7 +98,7 @@ const App: React.FC = () => {
           <div className="flex items-center gap-2 text-rose-600">
             <Palette size={24} />
             <h1 className="text-xl font-bold tracking-tight text-stone-900">
-              Craft<span className="text-rose-600">Spire</span>
+              Pint<span className="text-rose-600">Vibe</span>
             </h1>
           </div>
           {apiKey && (
@@ -84,6 +116,20 @@ const App: React.FC = () => {
       <main className="flex-grow bg-stone-50 px-4 py-8 sm:px-6">
         <div className="max-w-5xl mx-auto">
           
+          {/* Intro / Hero Section */}
+          <div className="text-center mb-10 pb-8 border-b border-stone-200/60">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-100 text-rose-700 text-xs font-bold uppercase tracking-wide mb-4">
+              <Sparkles size={14} />
+              Kreatív Inspiráció
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-stone-800 mb-4">
+              Találd meg a tökéletes Pinterest hangulatot
+            </h2>
+            <p className="text-lg text-stone-600 max-w-2xl mx-auto leading-relaxed">
+              A kézműves alkotásod több, mint egy tárgy – egy életérzés. Töltsd fel a fotót, és a mesterséges intelligencia segít megtalálni azokat a Pinterest trendeket és kulcsszavakat, amikkel a munkád igazán érvényesülni tud.
+            </p>
+          </div>
+
           {!apiKey ? (
             <ApiKeyModal onSave={handleSaveKey} />
           ) : (
@@ -132,7 +178,7 @@ const App: React.FC = () => {
                       <h3 className="text-xs font-bold text-rose-800 uppercase tracking-wider mb-1">
                         Felismerve
                       </h3>
-                      <p className="text-lg font-medium text-stone-800">
+                      <p className="text-lg font-medium text-stone-800 leading-snug">
                         {analysis.craftType}
                       </p>
                     </div>
@@ -142,10 +188,13 @@ const App: React.FC = () => {
                 {/* Right Panel: Results */}
                 <div className="md:col-span-8 lg:col-span-9">
                   {!analysis && !isAnalyzing && !error && (
-                    <div className="h-full flex flex-col items-center justify-center text-center p-8 text-stone-400 border-2 border-dashed border-stone-200 rounded-2xl">
+                    <div className="h-full flex flex-col items-center justify-center text-center p-8 text-stone-400 border-2 border-dashed border-stone-200 rounded-2xl bg-white/50">
                       <Palette size={48} className="mb-4 opacity-20" />
-                      <p className="text-lg">
-                        Tölts fel egy képet bal oldalon,<br/>hogy inspirációs táblákat generáljunk.
+                      <p className="text-lg font-medium text-stone-500">
+                        Válassz egy képet bal oldalon!
+                      </p>
+                      <p className="text-sm text-stone-400 mt-2 max-w-xs">
+                        Elemezzük a stílust, színeket és technikát, majd keresünk hozzá illő Pinterest ötleteket.
                       </p>
                     </div>
                   )}
@@ -159,7 +208,10 @@ const App: React.FC = () => {
 
                   {analysis && (
                     <div>
-                      <h2 className="text-2xl font-bold text-stone-800 mb-6">Pinterest Ötletek</h2>
+                      <h2 className="text-2xl font-bold text-stone-800 mb-6 flex items-center gap-2">
+                        <Sparkles className="text-rose-500" size={24} />
+                        Pinterest Ötletek
+                      </h2>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {analysis.suggestions.map((suggestion, idx) => (
                           <PinterestCard 
@@ -179,9 +231,16 @@ const App: React.FC = () => {
       </main>
 
       <footer className="bg-white border-t border-stone-200 py-6 mt-auto">
-        <div className="max-w-5xl mx-auto px-4 text-center text-stone-400 text-sm">
-          <p>Készült Google Gemini API technológiával.</p>
-          <p className="mt-1">A keresések közvetlenül a Pinterestre irányítanak át.</p>
+        <div className="max-w-5xl mx-auto px-4 text-center text-stone-500 text-sm">
+          <p className="font-medium">Az applikáció VIBE CODING technikával készült. © Práger Péter / 2025.</p>
+          <a 
+            href="https://www.mifotografia.hu/vc/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="mt-2 inline-block hover:text-rose-600 transition-colors border-b border-transparent hover:border-rose-600"
+          >
+            www.mifotografia.hu/vc/
+          </a>
         </div>
       </footer>
     </div>

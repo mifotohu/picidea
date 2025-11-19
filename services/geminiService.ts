@@ -7,7 +7,7 @@ const suggestionSchema: Schema = {
   properties: {
     craftType: {
       type: Type.STRING,
-      description: "The specific craft technique identified (e.g., 'Macrame', 'Watercolor', 'Amigurumi')."
+      description: "A precise and detailed description of the object, materials, and technique identified (e.g., 'Horgolt kék bálna figura amigurumi technikával', 'Vízfestékkel festett tavaszi virágok')."
     },
     suggestions: {
       type: Type.ARRAY,
@@ -40,9 +40,14 @@ export const analyzeImageForPinterest = async (
   const prompt = `
     Analyze this image of a handmade/craft item. 
     Your goal is to act as a Pinterest Curator.
-    1. Identify the specific craft technique and style.
-    2. Generate 6 distinct ideas for Pinterest searches that would inspire the creator of this item.
-    3. Suggest searches related to: similar patterns, complementary color palettes, advanced techniques, and styling ideas.
+    
+    1. VISUAL ANALYSIS: Analyze the image in detail. Identify not just the technique, but specifically WHAT the object is, the materials used, colors, and style. 
+       Provide a natural language description (max 1-2 sentences) in Hungarian (e.g., instead of just "Crochet", say "Crocheted blue teddy bear with velvet yarn").
+    
+    2. CURATION: Generate 6 distinct ideas for Pinterest searches that would inspire the creator of this item.
+    
+    3. DIVERSITY: Suggest searches related to: similar patterns, complementary color palettes, advanced techniques, and styling ideas.
+    
     4. Output MUST be in Hungarian (Magyar).
   `;
 
