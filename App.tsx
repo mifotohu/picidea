@@ -232,7 +232,7 @@ const App: React.FC = () => {
 
       <footer className="bg-white border-t border-stone-200 py-6 mt-auto">
         <div className="max-w-5xl mx-auto px-4 text-center text-stone-500 text-sm">
-          <p className="font-medium">Az applikáció VIBE CODING technikával készült. © Práger Péter / 2025.</p>
+          <p className="font-medium">Az applikáció VIBE CODING technikával készült. © Práger Péter / 2026.</p>
           <a 
             href="https://www.mifotografia.hu/vc/" 
             target="_blank" 
